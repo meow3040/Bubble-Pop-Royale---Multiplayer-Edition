@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bubble Pop Royale - Multiplayer Edition</title>
+    <!-- Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="canvas-container" class="lobby-bg">
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="ui-layer flex flex-col">
+        <!-- Navbar -->
+        <div id="navbar" class="interactive flex justify-center gap-10 p-6 bg-black/40 backdrop-blur-md border-b border-white/10 text-white">
+            <button onclick="switchTab('play')" id="nav-play" class="nav-btn active fortnite-font text-2xl pb-1">PLAY</button>
+            <button onclick="switchTab('multiplayer')" id="nav-multiplayer" class="nav-btn fortnite-font text-2xl text-gray-400 hover:text-white transition">MULTIPLAYER</button>
+            <button onclick="switchTab('shop')" id="nav-shop" class="nav-btn fortnite-font text-2xl text-gray-400 hover:text-white transition">SHOP</button>
+            <button onclick="switchTab('career')" id="nav-career" class="nav-btn fortnite-font text-2xl text-gray-400 hover:text-white transition">CAREER</button>
+            <div class="flex items-center gap-2 bg-black/50 px-4 py-1 rounded-full border border-yellow-500/50">
+                <span class="text-yellow-400 text-xl">🪙</span>
+                <span id="global-coins" class="fortnite-font text-xl text-yellow-400">0</span>
+            </div>
+        </div>
+
+        <!-- PLAY TAB -->
+        <div id="tab-play" class="interactive flex-1 flex flex-col md:flex-row items-center justify-around px-10">
+            <div class="flex flex-col items-center">
+                <div class="w-64 h-64 md:w-80 md:h-80 bg-gradient-to-t from-sky-500/40 to-transparent rounded-full flex items-center justify-center relative p-2 border-4 border-sky-400/30 shadow-[0_0_50px_rgba(56,189,248,0.2)]">
+                    <video class="video-feed" id="input_video" autoplay playsinline></video>
+                    <div class="absolute -bottom-4 bg-black/80 px-8 py-2 rounded-full border border-sky-400 text-sky-400 font-bold shadow-lg" id="player-id">
+                        PLAYER
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center md:items-end gap-6">
+                <button onclick="startGame('solo')" class="ready-btn fortnite-font text-5xl px-20 py-6 rounded-none skew-x-[-10deg] text-black">SOLO START</button>
+            </div>
+        </div>
+
+        <!-- MULTIPLAYER TAB -->
+        <div id="tab-multiplayer" class="hidden interactive flex-1 flex flex-col items-center justify-center text-white p-10">
+            <h2 class="fortnite-font text-6xl mb-6 text-purple-400 text-center">MULTIPLAYER</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 w-full max-w-4xl">
+                <div class="bg-black/60 p-8 rounded-3xl border-2 border-purple-500/30 flex flex-col gap-4">
+                    <h3 class="fortnite-font text-3xl">HOST</h3>
+                    <button onclick="hostRoom()" class="bg-purple-600 hover:bg-purple-500 p-4 rounded-xl fortnite-font text-2xl">CREATE ROOM</button>
+                    <div id="room-display" class="hidden mt-4 p-4 bg-white/10 rounded-xl text-center">
+                        <span class="text-sm block">ID:</span>
+                        <span id="room-id-text" class="text-3xl font-bold text-yellow-400">---</span>
+                    </div>
+                </div>
+                <div class="bg-black/60 p-8 rounded-3xl border-2 border-sky-500/30 flex flex-col gap-4">
+                    <h3 class="fortnite-font text-3xl">JOIN</h3>
+                    <input type="text" id="join-input" placeholder="ROOM ID..." class="bg-slate-800 p-4 rounded-xl border border-white/20 text-center text-2xl uppercase">
+                    <button onclick="joinRoom()" class="bg-sky-600 hover:bg-sky-500 p-4 rounded-xl fortnite-font text-2xl">JOIN ROOM</button>
+                </div>
+            </div>
+            <div id="mp-info" class="mt-8 text-xl text-yellow-500"></div>
+        </div>
+
+        <!-- SHOP TAB -->
+        <div id="tab-shop" class="hidden interactive flex-1 flex flex-col items-center p-10 overflow-y-auto">
+            <h2 class="fortnite-font text-6xl mb-6 text-yellow-400">ITEM SHOP</h2>
+            <div class="shop-grid w-full max-w-4xl" id="shop-items"></div>
+        </div>
+
+        <!-- CAREER TAB -->
+        <div id="tab-career" class="hidden interactive flex-1 flex flex-col items-center justify-center text-white p-10">
+            <h2 class="fortnite-font text-6xl mb-10 text-sky-400">CAREER STATS</h2>
+            <div class="bg-black/60 p-10 rounded-3xl border-2 border-sky-500/30 w-full max-w-md shadow-2xl">
+                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                    <span class="fortnite-font text-2xl">TOTAL COINS</span>
+                    <span id="career-coins" class="text-3xl text-yellow-400 font-bold">0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="fortnite-font text-2xl">HIGHEST SCORE</span>
+                    <span id="high-score" class="text-3xl text-green-400 font-bold">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game UI -->
+        <div id="game-ui" class="hidden w-full h-full flex flex-col justify-between p-8">
+            <div class="flex justify-between items-start">
+                <div class="bg-black/70 p-6 rounded-none skew-x-[-10deg] border-l-8 border-yellow-400 text-white shadow-xl">
+                    <div class="text-3xl font-black fortnite-font tracking-widest text-yellow-400">MY SCORE: <span id="score">0</span></div>
+                    <div id="opponent-box" class="hidden text-xl text-purple-400 font-bold mt-2">OPPONENT: <span id="opponent-score">0</span></div>
+                </div>
+                <div id="room-tag" class="bg-yellow-500/20 p-4 rounded-xl border border-yellow-500 text-white fortnite-font text-xl uppercase">SOLO</div>
+            </div>
+            <button onclick="leaveGame()" class="interactive self-start bg-red-600 hover:bg-red-500 text-white fortnite-font px-12 py-4 rounded-none skew-x-[-10deg] shadow-lg">LEAVE</button>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="game.js"></script>
+</body>
+</html>
